@@ -8,7 +8,7 @@ git remote add upstream URL
 git remote -v  
 然后你就能看到upstream了。  
 
-如果想与主repo合并：
+如果想与主repo合并：  
 git fetch upstream  
 git merge upstream/master    
 
