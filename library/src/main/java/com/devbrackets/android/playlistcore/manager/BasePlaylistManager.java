@@ -356,10 +356,12 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      * @param startPaused True if the media item should not start playing when it has been prepared
      */
     public void play(@IntRange(from = 0) long seekPosition, boolean startPaused) {
+        Log.d(TAG, "play start 11");
         I currentItem = getCurrentItem();
         if (currentItem == null) {
             return;
         }
+        Log.d(TAG, "play start 22");
 
         //Starts the playlist service
         Intent intent = new Intent(getApplication(), getMediaServiceClass());
@@ -532,6 +534,7 @@ public abstract class BasePlaylistManager<I extends IPlaylistItem> implements Pl
      */
     @Nullable
     public I getCurrentItem() {
+        Log.d(TAG, "currentPosition:"+currentPosition + ", getItemCount:"+getItemCount());
         if (currentPosition != INVALID_POSITION && currentPosition < getItemCount()) {
             return getItem(currentPosition);
         }

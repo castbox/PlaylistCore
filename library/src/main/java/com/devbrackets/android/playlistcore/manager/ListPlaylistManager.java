@@ -20,6 +20,7 @@ import android.app.Application;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.util.List;
 
@@ -86,6 +87,7 @@ public abstract class ListPlaylistManager<I extends IPlaylistItem> extends BaseP
 
     @Override
     public int getPositionForItem(long itemId) {
+        Log.d("ListPlaylistManager", "items:"+(items==null)+", getItemCount:"+getItemCount());
         if (items == null) {
             return INVALID_POSITION;
         }
