@@ -28,12 +28,14 @@ import android.os.Build;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
+import android.support.v7.app.NotificationCompat;
 import android.view.View;
 import android.widget.RemoteViews;
 
 import com.devbrackets.android.playlistcore.R;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
+import com.devbrackets.android.playlistcore.util.IntList;
+
 
 /**
  * A class to help simplify notification creation and modification for
@@ -103,7 +105,7 @@ public class NotificationHelper {
      * notification you will need to use {@link #setNotificationBaseInformation(int, int, Class)} instead
      *
      * @param notificationId The ID to specify this notification
-     * @param appIcon The applications icon resource
+     * @param appIcon        The applications icon resource
      */
     public void setNotificationBaseInformation(int notificationId, @DrawableRes int appIcon) {
         setNotificationBaseInformation(notificationId, appIcon, null);
@@ -114,14 +116,14 @@ public class NotificationHelper {
      * the mediaServiceClass is set the big notification will send intents to that service to notify of
      * button clicks.  These intents will have an action from
      * <ul>
-     *     <li>{@link RemoteActions#ACTION_STOP}</li>
-     *     <li>{@link RemoteActions#ACTION_PLAY_PAUSE}</li>
-     *     <li>{@link RemoteActions#ACTION_PREVIOUS}</li>
-     *     <li>{@link RemoteActions#ACTION_NEXT}</li>
+     * <li>{@link RemoteActions#ACTION_STOP}</li>
+     * <li>{@link RemoteActions#ACTION_PLAY_PAUSE}</li>
+     * <li>{@link RemoteActions#ACTION_PREVIOUS}</li>
+     * <li>{@link RemoteActions#ACTION_NEXT}</li>
      * </ul>
      *
-     * @param notificationId The ID to specify this notification
-     * @param appIcon The applications icon resource
+     * @param notificationId    The ID to specify this notification
+     * @param appIcon           The applications icon resource
      * @param mediaServiceClass The class for the service to notify of big notification actions
      */
     public void setNotificationBaseInformation(int notificationId, @DrawableRes int appIcon, @Nullable Class<? extends Service> mediaServiceClass) {
@@ -134,10 +136,10 @@ public class NotificationHelper {
      * Sets the volatile information for the notification.  This information is expected to
      * change frequently.
      *
-     * @param title The title to display on the notification (e.g. A song name)
-     * @param album The album to display on the notification.  This is the second row of text displayed
-     * @param artist The artist to display on the notification.  This is the third row of text displayed
-     * @param notificationImage An image to display on the notification (e.g. Album artwork)
+     * @param title                      The title to display on the notification (e.g. A song name)
+     * @param album                      The album to display on the notification.  This is the second row of text displayed
+     * @param artist                     The artist to display on the notification.  This is the third row of text displayed
+     * @param notificationImage          An image to display on the notification (e.g. Album artwork)
      * @param secondaryNotificationImage An image to display on the notification should be used to indicate playback type (e.g. Chromecast)
      */
     public void updateNotificationInformation(@Nullable String title, @Nullable String album, @Nullable String artist, @Nullable Bitmap notificationImage,
@@ -158,12 +160,12 @@ public class NotificationHelper {
      * Sets the volatile information for the notification.  This information is expected to
      * change frequently.
      *
-     * @param title The title to display on the notification (e.g. A song name)
-     * @param album The album to display on the notification.  This is the second row of text displayed
-     * @param artist The artist to display on the notification.  This is the third row of text displayed
-     * @param notificationImage An image to display on the notification (e.g. Album artwork)
+     * @param title                      The title to display on the notification (e.g. A song name)
+     * @param album                      The album to display on the notification.  This is the second row of text displayed
+     * @param artist                     The artist to display on the notification.  This is the third row of text displayed
+     * @param notificationImage          An image to display on the notification (e.g. Album artwork)
      * @param secondaryNotificationImage An image to display on the notification should be used to indicate playback type (e.g. Chromecast)
-     * @param notificationMediaState The current media state for the expanded (big) notification
+     * @param notificationMediaState     The current media state for the expanded (big) notification
      */
     public void updateNotificationInformation(@Nullable String title, @Nullable String album, @Nullable String artist, @Nullable Bitmap notificationImage,
                                               @Nullable Bitmap secondaryNotificationImage, @Nullable NotificationMediaState notificationMediaState) {
@@ -196,31 +198,77 @@ public class NotificationHelper {
         boolean allowSwipe = notificationInfo.getMediaState() == null || !notificationInfo.getMediaState().isPlaying();
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
-        builder.setContent(customNotificationViews);
-        builder.setContentIntent(pendingIntent);
-        builder.setDeleteIntent(createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
-        builder.setSmallIcon(notificationInfo.getAppIcon());
-        builder.setAutoCancel(allowSwipe);
-        builder.setOngoing(!allowSwipe);
 
-        if (pendingIntent != null) {
-            customNotificationViews.setOnClickPendingIntent(R.id.playlistcore_notification_touch_area, pendingIntent);
-        }
 
-        //Set the notification category on lollipop
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_STATUS);
-            builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            IntList compactActionList = new IntList();
 
-        //Build the notification and set the expanded content view if there is a service to inform of clicks
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && mediaServiceClass != null) {
-            RemoteViews bigNotificationView = getBigNotification(serviceClass);
-            bigNotificationView.setOnClickPendingIntent(R.id.playlistcore_big_notification_touch_area, pendingIntent);
-            builder.setCustomBigContentView(bigNotificationView);
+            builder.setOngoing(false)
+                    .setContentIntent(pendingIntent)
+                    .setSmallIcon(notificationInfo.getAppIcon())
+                    .setLargeIcon(notificationInfo.getLargeImage())
+                    .setAutoCancel(false)
+                    .setContentTitle(notificationInfo.getTitle())
+                    .setContentText(notificationInfo.getAlbum())
+                    .setWhen(0) // we don't need the time
+                    .setVisibility(Notification.VISIBILITY_PUBLIC);
+
+            addPlayPauseAction(builder, serviceClass);
+
+            builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
+//                    .setMediaSession(mediaPlayer.getSessionToken())
+                    .setShowCancelButton(true)
+                    .setCancelButtonIntent(createPendingIntent(RemoteActions.ACTION_STOP, serviceClass)))
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setColor(Notification.COLOR_DEFAULT);
+
+        } else {
+
+            builder.setContent(customNotificationViews);
+            builder.setContentIntent(pendingIntent);
+            builder.setDeleteIntent(createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
+            builder.setSmallIcon(notificationInfo.getAppIcon());
+            builder.setAutoCancel(allowSwipe);
+            builder.setOngoing(!allowSwipe);
+
+            if (pendingIntent != null) {
+                customNotificationViews.setOnClickPendingIntent(R.id.playlistcore_notification_touch_area, pendingIntent);
+            }
+
+            //Set the notification category on lollipop
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder.setCategory(Notification.CATEGORY_STATUS);
+                builder.setVisibility(Notification.VISIBILITY_PUBLIC);
+            }
+
+            //Build the notification and set the expanded content view if there is a service to inform of clicks
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && mediaServiceClass != null) {
+                RemoteViews bigNotificationView = getBigNotification(serviceClass);
+                bigNotificationView.setOnClickPendingIntent(R.id.playlistcore_big_notification_touch_area, pendingIntent);
+                builder.setCustomBigContentView(bigNotificationView);
+            }
+
         }
 
         return builder.build();
+    }
+
+    private void addPlayPauseAction(NotificationCompat.Builder builder, @NonNull Class<? extends Service> serviceClass) {
+        String label;
+        int icon;
+        PendingIntent intent;
+        NotificationMediaState state = notificationInfo.getMediaState();
+        if (state != null && state.isPlaying()) {
+            label = "Pause";
+            icon = R.mipmap.ic_pause_white_36dp;
+            intent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass);
+        } else {
+            label = "Play";
+            icon = R.mipmap.ic_play_white_36dp;
+            intent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass);
+        }
+
+        builder.addAction(new NotificationCompat.Action(icon, label, intent));
     }
 
     /**
@@ -315,7 +363,7 @@ public class NotificationHelper {
     /**
      * Creates a PendingIntent for the given action to the specified service
      *
-     * @param action The action to use
+     * @param action       The action to use
      * @param serviceClass The service class to notify of intents
      * @return The resulting PendingIntent
      */
