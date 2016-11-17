@@ -34,7 +34,6 @@ import android.widget.RemoteViews;
 
 import com.devbrackets.android.playlistcore.R;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
-import com.devbrackets.android.playlistcore.util.IntList;
 
 
 /**
@@ -198,57 +197,40 @@ public class NotificationHelper {
         boolean allowSwipe = notificationInfo.getMediaState() == null || !notificationInfo.getMediaState().isPlaying();
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+        int playPauseButtonPosition = 0;
+        NotificationMediaState notificationMediaState = notificationInfo.getMediaState();
 
+        // If skip to previous action is enabled
+        if (notificationMediaState != null && notificationMediaState.isPreviousEnabled()) {
+            builder.addAction(R.drawable.playlistcore_ic_skip_previous_white,
+                    "Previous", createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            IntList compactActionList = new IntList();
-
-            builder.setOngoing(false)
-                    .setContentIntent(pendingIntent)
-                    .setSmallIcon(notificationInfo.getAppIcon())
-                    .setLargeIcon(notificationInfo.getLargeImage())
-                    .setAutoCancel(false)
-                    .setContentTitle(notificationInfo.getTitle())
-                    .setContentText(notificationInfo.getAlbum())
-                    .setWhen(0) // we don't need the time
-                    .setVisibility(Notification.VISIBILITY_PUBLIC);
-
-            addPlayPauseAction(builder, serviceClass);
-
-            builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
-//                    .setMediaSession(mediaPlayer.getSessionToken())
-                    .setShowCancelButton(true)
-                    .setCancelButtonIntent(createPendingIntent(RemoteActions.ACTION_STOP, serviceClass)))
-                    .setVisibility(Notification.VISIBILITY_PUBLIC)
-                    .setColor(Notification.COLOR_DEFAULT);
-
-        } else {
-
-            builder.setContent(customNotificationViews);
-            builder.setContentIntent(pendingIntent);
-            builder.setDeleteIntent(createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
-            builder.setSmallIcon(notificationInfo.getAppIcon());
-            builder.setAutoCancel(allowSwipe);
-            builder.setOngoing(!allowSwipe);
-
-            if (pendingIntent != null) {
-                customNotificationViews.setOnClickPendingIntent(R.id.playlistcore_notification_touch_area, pendingIntent);
-            }
-
-            //Set the notification category on lollipop
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                builder.setCategory(Notification.CATEGORY_STATUS);
-                builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-            }
-
-            //Build the notification and set the expanded content view if there is a service to inform of clicks
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && mediaServiceClass != null) {
-                RemoteViews bigNotificationView = getBigNotification(serviceClass);
-                bigNotificationView.setOnClickPendingIntent(R.id.playlistcore_big_notification_touch_area, pendingIntent);
-                builder.setCustomBigContentView(bigNotificationView);
-            }
-
+            // If there is a "skip to previous" button, the play/pause button will
+            // be the second one. We need to keep track of it, because the MediaStyle notification
+            // requires to specify the index of the buttons (actions) that should be visible
+            // when in compact view.
+            playPauseButtonPosition = 1;
         }
+
+        addPlayPauseAction(builder, serviceClass);
+
+        if (notificationMediaState != null && notificationMediaState.isNextEnabled()) {
+            builder.addAction(R.drawable.playlistcore_ic_skip_next_white,
+                    "Next", createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
+        }
+
+        builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
+                .setShowActionsInCompactView(
+                        new int[]{playPauseButtonPosition}))  // show only play/pause in compact view
+                .setContentIntent(pendingIntent)
+                .setOngoing(!allowSwipe)
+                .setAutoCancel(allowSwipe)
+                .setSmallIcon(notificationInfo.getAppIcon())
+                .setLargeIcon(notificationInfo.getLargeImage())
+                .setContentTitle(notificationInfo.getTitle())
+                .setContentText(notificationInfo.getAlbum())
+                .setColor(Notification.COLOR_DEFAULT)
+                .setVisibility(Notification.VISIBILITY_PUBLIC);
 
         return builder.build();
     }
@@ -260,11 +242,11 @@ public class NotificationHelper {
         NotificationMediaState state = notificationInfo.getMediaState();
         if (state != null && state.isPlaying()) {
             label = "Pause";
-            icon = R.mipmap.ic_pause_white_36dp;
+            icon = R.drawable.playlistcore_ic_pause_white;
             intent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass);
         } else {
             label = "Play";
-            icon = R.mipmap.ic_play_white_36dp;
+            icon = R.drawable.playlistcore_ic_play_arrow_white;
             intent = createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass);
         }
 
