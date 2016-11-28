@@ -192,7 +192,7 @@ public class NotificationHelper {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public Notification getNotification(@Nullable PendingIntent pendingIntent, @NonNull Class<? extends Service> serviceClass) {
         setClickPendingIntent(pendingIntent);
-        RemoteViews customNotificationViews = getCustomNotification(serviceClass);
+//        RemoteViews customNotificationViews = getCustomNotification(serviceClass);
 
         boolean allowSwipe = notificationInfo.getMediaState() == null || !notificationInfo.getMediaState().isPlaying();
 
@@ -219,18 +219,22 @@ public class NotificationHelper {
                     "Next", createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
         }
 
-        builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
-                .setShowActionsInCompactView(
-                        new int[]{playPauseButtonPosition}))  // show only play/pause in compact view
-                .setContentIntent(pendingIntent)
-                .setOngoing(!allowSwipe)
-                .setAutoCancel(allowSwipe)
-                .setSmallIcon(notificationInfo.getAppIcon())
-                .setLargeIcon(notificationInfo.getLargeImage())
-                .setContentTitle(notificationInfo.getTitle())
-                .setContentText(notificationInfo.getAlbum())
-                .setColor(Notification.COLOR_DEFAULT)
-                .setVisibility(Notification.VISIBILITY_PUBLIC);
+        try {
+            builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(
+                            new int[]{playPauseButtonPosition}))  // show only play/pause in compact view
+                    .setContentIntent(pendingIntent)
+                    .setOngoing(!allowSwipe)
+                    .setAutoCancel(allowSwipe)
+                    .setSmallIcon(notificationInfo.getAppIcon())
+                    .setLargeIcon(notificationInfo.getLargeImage())
+                    .setContentTitle(notificationInfo.getTitle())
+                    .setContentText(notificationInfo.getAlbum())
+                    .setColor(Notification.COLOR_DEFAULT)
+                    .setVisibility(Notification.VISIBILITY_PUBLIC);
+        } catch (Exception e) {
+        }
+
 
         return builder.build();
     }
