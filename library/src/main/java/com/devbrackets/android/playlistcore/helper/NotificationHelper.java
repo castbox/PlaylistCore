@@ -24,6 +24,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
@@ -219,6 +220,11 @@ public class NotificationHelper {
                     "Next", createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
         }
 
+        int appIcon = notificationInfo.getAppIcon();
+        Bitmap largeIcon = notificationInfo.getLargeImage();
+        if (largeIcon == null && appIcon > 0)
+            BitmapFactory.decodeResource(context.getResources(), appIcon);
+
         try {
             builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
                     .setShowActionsInCompactView(
@@ -226,8 +232,8 @@ public class NotificationHelper {
                     .setContentIntent(pendingIntent)
                     .setOngoing(!allowSwipe)
                     .setAutoCancel(allowSwipe)
-                    .setSmallIcon(notificationInfo.getAppIcon())
-                    .setLargeIcon(notificationInfo.getLargeImage())
+                    .setSmallIcon(appIcon)
+                    .setLargeIcon(largeIcon)
                     .setContentTitle(notificationInfo.getTitle())
                     .setContentText(notificationInfo.getAlbum())
                     .setColor(Notification.COLOR_DEFAULT)
