@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
+import android.os.RemoteException;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -177,8 +178,11 @@ public class NotificationHelper {
         notificationInfo.setMediaState(notificationMediaState);
 
         if (notificationInfo.getShowNotifications() && notificationManager != null && mediaServiceClass != null) {
-            Notification notification = getNotification(notificationInfo.getPendingIntent(), mediaServiceClass);
-            notificationManager.notify(notificationInfo.getNotificationId(), notification);
+            try {
+                Notification notification = getNotification(notificationInfo.getPendingIntent(), mediaServiceClass);
+                notificationManager.notify(notificationInfo.getNotificationId(), notification);
+            } catch (Exception e) {
+            }
         }
     }
 
