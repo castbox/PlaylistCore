@@ -12,7 +12,9 @@ def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}" // releas
 
 dependencies {
     // Android
-    compile 'com.android.support:appcompat-v7:24.2.1' // includes support-v4
+    compile 'com.android.support:appcompat-v7:25.0.1' // includes support-v4
+    compile "com.android.support:mediarouter-v7:$SUPPORT_LIBRARY_VERSION"
+    compile "com.google.android.gms:play-services-cast-framework:$PLAY_SERVICES_VERSION"
 }
 
 android {

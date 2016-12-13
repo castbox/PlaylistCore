@@ -32,6 +32,7 @@ import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.media.MediaBrowserCompat;
 import android.util.Log;
 
 import com.devbrackets.android.playlistcore.annotation.ServiceContinuationMethod;
@@ -52,6 +53,14 @@ import com.devbrackets.android.playlistcore.listener.ProgressListener;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
 import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
+import com.google.android.gms.cast.MediaInfo;
+import com.google.android.gms.cast.MediaMetadata;
+import com.google.android.gms.cast.MediaStatus;
+import com.google.android.gms.cast.framework.CastContext;
+import com.google.android.gms.cast.framework.CastSession;
+import com.google.android.gms.cast.framework.SessionManagerListener;
+import com.google.android.gms.cast.framework.media.RemoteMediaClient;
+import com.google.android.gms.common.images.WebImage;
 
 /**
  * A base service for adding media playback support using the {@link BasePlaylistManager}.
@@ -65,7 +74,7 @@ import com.devbrackets.android.playlistcore.util.MediaProgressPoll;
  * audio becoming noisy (e.g. when a headphone cable is pulled out) then you will need
  * to create your own {@link android.content.BroadcastReceiver} as outlined at
  * <a href="http://developer.android.com/guide/topics/media/mediaplayer.html#noisyintent">
- *     http://developer.android.com/guid/topics/media/mediaplayer.html#noisyintent</a>
+ * http://developer.android.com/guid/topics/media/mediaplayer.html#noisyintent</a>
  */
 @SuppressWarnings("unused")
 public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends BasePlaylistManager<I>> extends Service implements AudioFocusHelper.AudioFocusCallback, ProgressListener {
@@ -111,6 +120,13 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     @Nullable
     protected Intent workaroundIntent = null;
 
+    // Chrome Cast
+    private CastContext mCastContext;
+    private CastSession mCastSession;
+    private SessionManagerListener<CastSession> mSessionManagerListener;
+    private RemoteMediaClient.Listener mRemoteMediaClientListener;
+    private RemoteMediaClient mRemoteMediaClient;
+
     /**
      * Retrieves a new instance of the {@link AudioPlayerApi}. This will only
      * be called the first time an Audio Player is needed; afterwards a cached
@@ -122,7 +138,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     protected abstract AudioPlayerApi getNewAudioPlayer();
 
     protected abstract void setupAsForeground();
+
     protected abstract void setupForeground();
+
     protected abstract void stopForeground();
 
     /**
@@ -140,7 +158,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     /**
      * Links the {@link BasePlaylistManager} that contains the information for playback
      * to this service.
-     *
+     * <p>
      * NOTE: this is only used for retrieving information, it isn't used to register notifications
      * for playlist changes, however as long as the change isn't breaking (e.g. cleared playlist)
      * then nothing additional needs to be performed.
@@ -198,9 +216,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Called when a current media item has ended playback.  This is called when we
      * are unable to play an item.
      *
-     * @param playlistItem The PlaylistItem that has ended
+     * @param playlistItem    The PlaylistItem that has ended
      * @param currentPosition The position the playlist item ended at
-     * @param duration The duration of the PlaylistItem
+     * @param duration        The duration of the PlaylistItem
      */
     protected void onMediaPlaybackEnded(I playlistItem, long currentPosition, long duration) {
         //Purposefully left blank
@@ -209,9 +227,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     /**
      * Called when a media item has started playback.
      *
-     * @param playlistItem The PlaylistItem that has started playback
+     * @param playlistItem    The PlaylistItem that has started playback
      * @param currentPosition The position the playback has started at
-     * @param duration The duration of the PlaylistItem
+     * @param duration        The duration of the PlaylistItem
      */
     protected void onMediaPlaybackStarted(I playlistItem, long currentPosition, long duration) {
         //Purposefully left blank
@@ -245,7 +263,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * Similar to {@link #updateNotification()}, this is called when
      * the remote views need to be updated due to playback state
      * updates and item changes.
-     *
+     * <p>
      * The remote views handle the lock screen, bluetooth controls,
      * Android Wear interactions, etc.
      */
@@ -270,6 +288,21 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         Log.d(TAG, "Service Created");
 
         onServiceCreate();
+
+        // Chrome Cast
+        try {
+            setupCastListener();
+            mCastContext = CastContext.getSharedInstance(this);
+            mCastSession = mCastContext.getSessionManager().getCurrentCastSession();
+            mRemoteMediaClient = getRemoteMediaClient();
+
+            if (mCastContext != null) {
+                mCastContext.getSessionManager().addSessionManagerListener(mSessionManagerListener, CastSession.class);
+            }
+
+            Log.d(TAG, "mCastContext :" + (mCastContext == null) + ", mCastSession :" + (mCastSession == null) + ", mRemoteMediaClient :" + (mRemoteMediaClient == null));
+        } catch (NullPointerException e) {
+        }
     }
 
     /**
@@ -292,6 +325,14 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         }
 
         onCreateCalled = false;
+
+        try {
+            if (mCastContext != null) {
+                mCastContext.getSessionManager().removeSessionManagerListener(mSessionManagerListener, CastSession.class);
+            }
+        } catch (NullPointerException e) {
+        }
+
     }
 
     /**
@@ -388,6 +429,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     @Override
     public boolean onProgressUpdated(@NonNull MediaProgress mediaProgress) {
         currentMediaProgress = mediaProgress;
+
+        if (isCastSessionConnected()) {
+            if (mRemoteMediaClient != null)
+                currentMediaProgress.update(mRemoteMediaClient.getApproximateStreamPosition(), 0, mRemoteMediaClient.getStreamDuration());
+        }
+
         return getPlaylistManager().onProgressUpdated(mediaProgress);
     }
 
@@ -459,8 +506,16 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * @return True if media is currently playing
      */
     protected boolean isPlaying() {
+        Log.d(TAG, "isPlaying isCastSessionConnected():" + isCastSessionConnected());
         if (currentItemIsType(BasePlaylistManager.AUDIO)) {
-            return audioPlayer != null && audioPlayer.isPlaying();
+            if (isCastSessionConnected()) {
+                if (mRemoteMediaClient == null)
+                    mRemoteMediaClient = getRemoteMediaClient();
+
+                return mRemoteMediaClient != null && mRemoteMediaClient.isPlaying();
+            } else {
+                return audioPlayer != null && audioPlayer.isPlaying();
+            }
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             return getPlaylistManager().getVideoPlayer() != null && getPlaylistManager().getVideoPlayer().isPlaying();
         }
@@ -589,7 +644,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * in playback when AudioFocus is lost or gained and we can dim instead
      * of pausing playback.
      *
-     * @param left The left channels audio volume
+     * @param left  The left channels audio volume
      * @param right The right channels audio volume
      */
     protected void setVolume(float left, float right) {
@@ -623,9 +678,13 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * that the current playlist item has changed.
      */
     protected void postPlaylistItemChanged() {
+        Log.d(TAG, "postPlaylistItemChanged");
         boolean hasNext = getPlaylistManager().isNextAvailable();
         boolean hasPrevious = getPlaylistManager().isPreviousAvailable();
         getPlaylistManager().onPlaylistItemChanged(currentPlaylistItem, hasNext, hasPrevious);
+
+        if (isCastSessionConnected())
+            loadRemoteMedia(0, true);
     }
 
     /**
@@ -685,15 +744,29 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * normal seeking process use the {@link #performSeekStarted()} in
      * conjunction with {@link #performSeekEnded(long)}
      *
-     * @param position The position to seek to in milliseconds
+     * @param position            The position to seek to in milliseconds
      * @param updatePlaybackState True if the playback state should be updated
      */
     protected void performSeek(long position, boolean updatePlaybackState) {
         boolean isPlaying = false;
 
-        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            isPlaying = audioPlayer.isPlaying();
-            audioPlayer.seekTo(position);
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
+
+            if (isCastSessionConnected()) {
+                if (mRemoteMediaClient == null)
+                    mRemoteMediaClient = getRemoteMediaClient();
+
+                if (mRemoteMediaClient != null) {
+                    isPlaying = mRemoteMediaClient.isPlaying();
+//                    mRemoteMediaClient.seek(position);
+                }
+            } else {
+                if (audioPlayer != null) {
+                    isPlaying = audioPlayer.isPlaying();
+                    audioPlayer.seekTo(position);
+                }
+            }
+
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
@@ -713,8 +786,21 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * playback.
      */
     protected void performPause() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            audioPlayer.pause();
+        Log.d(TAG, "performPause isCastSessionConnected():" + isCastSessionConnected());
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
+
+            if (isCastSessionConnected()) {
+                if (mRemoteMediaClient == null)
+                    mRemoteMediaClient = getRemoteMediaClient();
+
+                if (mRemoteMediaClient != null && mRemoteMediaClient.isPlaying())
+                    mRemoteMediaClient.pause();
+
+            } else {
+                if (audioPlayer != null)
+                    audioPlayer.pause();
+            }
+
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
@@ -736,8 +822,26 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
      * item.
      */
     protected void performPlay() {
-        if (currentItemIsType(BasePlaylistManager.AUDIO) && audioPlayer != null) {
-            audioPlayer.play();
+        Log.d(TAG, "performPlay isCastSessionConnected():" + isCastSessionConnected() + ", mRemoteMediaClient:" + (mRemoteMediaClient == null));
+
+        if (currentItemIsType(BasePlaylistManager.AUDIO)) {
+
+            if (isCastSessionConnected()) {
+                if (mRemoteMediaClient == null)
+                    mRemoteMediaClient = getRemoteMediaClient();
+
+                if (mRemoteMediaClient != null) {
+                    if (audioPlayer.isPlaying())
+                        audioPlayer.pause();
+
+                    if (mRemoteMediaClient.isPaused())
+                        mRemoteMediaClient.play();
+                }
+            } else {
+                if (audioPlayer != null)
+                    audioPlayer.play();
+            }
+
         } else if (currentItemIsType(BasePlaylistManager.VIDEO)) {
             VideoPlayerApi videoPlayer = getPlaylistManager().getVideoPlayer();
             if (videoPlayer != null) {
@@ -981,7 +1085,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             return false;
         }
 
-        return  audioFocusHelper != null && audioFocusHelper.requestFocus();
+        return audioFocusHelper != null && audioFocusHelper.requestFocus();
     }
 
     /**
@@ -993,7 +1097,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             return false;
         }
 
-        return  audioFocusHelper != null && audioFocusHelper.abandonFocus();
+        return audioFocusHelper != null && audioFocusHelper.abandonFocus();
     }
 
     /**
@@ -1255,6 +1359,190 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
 
             return false;
+        }
+    }
+
+    private RemoteMediaClient getRemoteMediaClient() {
+        try {
+            CastSession castSession = mCastContext.getSessionManager().getCurrentCastSession();
+            return (castSession != null && castSession.isConnected())
+                    ? castSession.getRemoteMediaClient() : null;
+        } catch (NullPointerException e) {
+            return null;
+        }
+    }
+
+    private boolean isCastSessionConnected() {
+        try {
+            CastSession castSession = mCastContext.getSessionManager().getCurrentCastSession();
+            return castSession != null && castSession.isConnected();
+        } catch (NullPointerException e) {
+            return false;
+        }
+    }
+
+    private MediaInfo buildMediaInfo(I mediaItem) {
+        if (mediaItem == null) return null;
+        Log.d(TAG, "buildMediaInfo");
+        MediaMetadata mediaMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MUSIC_TRACK);
+
+        mediaMetadata.putString(MediaMetadata.KEY_SUBTITLE, mediaItem.getAlbum());
+        mediaMetadata.putString(MediaMetadata.KEY_TITLE, mediaItem.getTitle());
+        mediaMetadata.addImage(new WebImage(Uri.parse(mediaItem.getThumbnailUrl())));
+
+        return new MediaInfo.Builder(mediaItem.getMediaUrl())
+                .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
+                .setContentType("audio/mepg")
+                .setMetadata(mediaMetadata)
+                .build();
+    }
+
+    private void setupCastListener() {
+        mSessionManagerListener = new SessionManagerListener<CastSession>() {
+            @Override
+            public void onSessionStarting(CastSession castSession) {
+                Log.d(TAG, "castSession");
+            }
+
+            @Override
+            public void onSessionStarted(CastSession castSession, String s) {
+                Log.d(TAG, "onSessionStarted");
+                onApplicationConnected(castSession);
+            }
+
+            @Override
+            public void onSessionStartFailed(CastSession castSession, int i) {
+                Log.d(TAG, "onSessionStartFailed");
+                onApplicationDisconnected();
+            }
+
+            @Override
+            public void onSessionEnding(CastSession castSession) {
+                Log.d(TAG, "onSessionEnding");
+                onApplicationDisconnected();
+            }
+
+            @Override
+            public void onSessionEnded(CastSession castSession, int i) {
+                Log.d(TAG, "onSessionEnded");
+                onApplicationDisconnected();
+            }
+
+            @Override
+            public void onSessionResuming(CastSession castSession, String s) {
+                Log.d(TAG, "onSessionResuming");
+            }
+
+            @Override
+            public void onSessionResumed(CastSession castSession, boolean b) {
+                Log.d(TAG, "onSessionResumed");
+                onApplicationConnected(castSession);
+            }
+
+            @Override
+            public void onSessionResumeFailed(CastSession castSession, int i) {
+                Log.d(TAG, "onSessionResumeFailed");
+                onApplicationDisconnected();
+            }
+
+            @Override
+            public void onSessionSuspended(CastSession castSession, int i) {
+                Log.d(TAG, "onSessionSuspended");
+
+            }
+
+            private void onApplicationConnected(CastSession castSession) {
+                mCastSession = castSession;
+
+                mRemoteMediaClient = getRemoteMediaClient();
+                if (mRemoteMediaClient != null) {
+                    mRemoteMediaClient.addListener(mRemoteMediaClientListener);
+                }
+
+                if (null != currentPlaylistItem) {
+                    if (audioPlayer.isPlaying())
+                        audioPlayer.pause();
+
+                    loadRemoteMedia(0, true);
+                    return;
+                }
+            }
+
+            private void onApplicationDisconnected() {
+                if (mRemoteMediaClient != null) {
+                    mRemoteMediaClient.removeListener(mRemoteMediaClientListener);
+
+                    if (mRemoteMediaClient.isPlaying())
+                        audioPlayer.play();
+                }
+                mRemoteMediaClient = null;
+
+            }
+        };
+
+        mRemoteMediaClientListener = new RemoteMediaClient.Listener() {
+            @Override
+            public void onStatusUpdated() {
+                Log.d(TAG, "onStatusUpdated");
+                updatePlaybackState();
+            }
+
+            @Override
+            public void onMetadataUpdated() {
+                Log.d(TAG, "onMetadataUpdated");
+            }
+
+            @Override
+            public void onQueueStatusUpdated() {
+                Log.d(TAG, "onQueueStatusUpdated");
+
+            }
+
+            @Override
+            public void onPreloadStatusUpdated() {
+                Log.d(TAG, "onPreloadStatusUpdated");
+
+            }
+
+            @Override
+            public void onSendingRemoteMediaRequest() {
+                Log.d(TAG, "onSendingRemoteMediaRequest");
+                updatePlaybackState();
+            }
+
+            @Override
+            public void onAdBreakStatusUpdated() {
+                Log.d(TAG, "onAdBreakStatusUpdated");
+
+            }
+
+            private void updatePlaybackState() {
+                if (mRemoteMediaClient == null)
+                    mRemoteMediaClient = getRemoteMediaClient();
+
+                if (mRemoteMediaClient != null) {
+                    if (mRemoteMediaClient.isPlaying()) {
+                        setPlaybackState(PlaybackState.PLAYING);
+                    } else if (mRemoteMediaClient.isPaused()) {
+                        setPlaybackState(PlaybackState.PAUSED);
+                    }
+
+                    updateNotification();
+                }
+            }
+        };
+    }
+
+    private void loadRemoteMedia(int position, boolean autoPlay) {
+        Log.d(TAG, "loadRemoteMedia ");
+        if (mRemoteMediaClient == null)
+            mRemoteMediaClient = getRemoteMediaClient();
+
+        Log.d(TAG, "loadRemoteMedia remoteMediaClient == null :" + (mRemoteMediaClient == null));
+        if (mRemoteMediaClient != null) {
+            Log.d(TAG, "remoteMediaClient.load");
+            mRemoteMediaClient.addListener(mRemoteMediaClientListener);
+            mRemoteMediaClient.load(buildMediaInfo(currentPlaylistItem), autoPlay, position);
         }
     }
 }
