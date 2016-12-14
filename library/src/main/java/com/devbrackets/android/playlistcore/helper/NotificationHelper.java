@@ -224,10 +224,11 @@ public class NotificationHelper {
                     "Next", createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
         }
 
-        int appIcon = notificationInfo.getAppIcon();
+        int appIcon = R.mipmap.ic_notification;
         Bitmap largeIcon = notificationInfo.getLargeImage();
-        if (largeIcon == null && appIcon > 0)
-            BitmapFactory.decodeResource(context.getResources(), appIcon);
+
+        if (largeIcon == null)
+            largeIcon = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_notification);
 
         try {
             builder.setStyle(new android.support.v7.app.NotificationCompat.MediaStyle()
@@ -244,7 +245,6 @@ public class NotificationHelper {
                     .setVisibility(Notification.VISIBILITY_PUBLIC);
         } catch (Exception e) {
         }
-
 
         return builder.build();
     }
