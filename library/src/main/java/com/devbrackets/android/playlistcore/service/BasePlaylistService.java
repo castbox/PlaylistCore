@@ -21,6 +21,7 @@ import android.graphics.Bitmap;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.devbrackets.android.playlistcore.R;
 import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
@@ -276,6 +277,8 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
         mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
         mediaState.setPlaying(isPlaying());
+
+        Log.d(TAG, "isPlaying():"+isPlaying());
 
 
         //Update the big notification images
