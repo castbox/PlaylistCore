@@ -60,6 +60,8 @@ import com.google.android.gms.cast.framework.CastContext;
 import com.google.android.gms.cast.framework.CastSession;
 import com.google.android.gms.cast.framework.SessionManagerListener;
 import com.google.android.gms.cast.framework.media.RemoteMediaClient;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.images.WebImage;
 
 /**
@@ -122,7 +124,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     // Chrome Cast
     private CastContext mCastContext;
-    private CastSession mCastSession;
     private SessionManagerListener<CastSession> mSessionManagerListener;
     private RemoteMediaClient.Listener mRemoteMediaClientListener;
     private RemoteMediaClient mRemoteMediaClient;
@@ -291,16 +292,15 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
         // Chrome Cast
         try {
-            setupCastListener();
-            mCastContext = CastContext.getSharedInstance(this);
-            mCastSession = mCastContext.getSessionManager().getCurrentCastSession();
-            mRemoteMediaClient = getRemoteMediaClient();
-
-            if (mCastContext != null) {
-                mCastContext.getSessionManager().addSessionManagerListener(mSessionManagerListener, CastSession.class);
+            if (isGooglePlayServicesAvailable()) {
+                setupCastListener();
+                mCastContext = CastContext.getSharedInstance(this);
+                if (mCastContext != null) {
+                    mCastContext.getSessionManager().addSessionManagerListener(mSessionManagerListener, CastSession.class);
+                }
+                Log.d(TAG, "mCastContext :" + (mCastContext == null) + ", mRemoteMediaClient :" + (mRemoteMediaClient == null));
             }
 
-            Log.d(TAG, "mCastContext :" + (mCastContext == null) + ", mCastSession :" + (mCastSession == null) + ", mRemoteMediaClient :" + (mRemoteMediaClient == null));
         } catch (NullPointerException e) {
         }
     }
@@ -431,6 +431,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
         currentMediaProgress = mediaProgress;
 
         if (isCastSessionConnected()) {
+            if (mRemoteMediaClient == null)
+                mRemoteMediaClient = getRemoteMediaClient();
+
             if (mRemoteMediaClient != null)
                 currentMediaProgress.update(mRemoteMediaClient.getApproximateStreamPosition(), 0, mRemoteMediaClient.getStreamDuration());
         }
@@ -1364,6 +1367,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     private RemoteMediaClient getRemoteMediaClient() {
         try {
+            if (mCastContext == null)
+                return null;
+
             CastSession castSession = mCastContext.getSessionManager().getCurrentCastSession();
             return (castSession != null && castSession.isConnected())
                     ? castSession.getRemoteMediaClient() : null;
@@ -1374,6 +1380,9 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
 
     private boolean isCastSessionConnected() {
         try {
+            if (mCastContext == null)
+                return false;
+
             CastSession castSession = mCastContext.getSessionManager().getCurrentCastSession();
             return castSession != null && castSession.isConnected();
         } catch (NullPointerException e) {
@@ -1452,8 +1461,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
 
             private void onApplicationConnected(CastSession castSession) {
-                mCastSession = castSession;
-
                 mRemoteMediaClient = getRemoteMediaClient();
                 if (mRemoteMediaClient != null) {
                     mRemoteMediaClient.addListener(mRemoteMediaClientListener);
@@ -1544,5 +1551,20 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             mRemoteMediaClient.addListener(mRemoteMediaClientListener);
             mRemoteMediaClient.load(buildMediaInfo(currentPlaylistItem), autoPlay, position);
         }
+    }
+
+    public boolean isGooglePlayServicesAvailable() {
+        boolean isGooglePlayServicesAvailable = true;
+        try {
+            int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+            if (status != ConnectionResult.SUCCESS) {
+                isGooglePlayServicesAvailable = false;
+            }
+            Log.e(TAG, "GooglePlayServicesUtil.isGooglePlayServicesAvailable:" + status);
+        } catch (Exception e) {
+            Log.e(TAG, "GooglePlayServicesUtil.isGooglePlayServicesAvailable");
+        }
+
+        return isGooglePlayServicesAvailable;
     }
 }
