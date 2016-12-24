@@ -312,8 +312,12 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     @Override
     public void onDestroy() {
         super.onDestroy();
-
         Log.d(TAG, "Service Destroyed");
+
+        taskRemove();
+    }
+
+    private void taskRemove() {
         setPlaybackState(PlaybackState.STOPPED);
 
         relaxResources(true);
@@ -332,7 +336,6 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
             }
         } catch (NullPointerException e) {
         }
-
     }
 
     /**
@@ -368,7 +371,7 @@ public abstract class PlaylistServiceCore<I extends IPlaylistItem, M extends Bas
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
-        onDestroy();
+        taskRemove();
     }
 
     /**
