@@ -26,7 +26,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.KeyEvent;
 
-import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
+//import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
 
 /**
@@ -51,12 +51,12 @@ public class MediaControlsReceiver extends BroadcastReceiver {
      * @param intent The Intent that was received
      */
     private void handleMediaButtonIntent(Context context, Intent intent) {
-        Class<? extends Service> mediaServiceClass = getServiceClass(intent, MediaControlsHelper.RECEIVER_EXTRA_CLASS);
-        KeyEvent event = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-
-        if (mediaServiceClass != null && event != null && event.getAction() == KeyEvent.ACTION_UP) {
-            handleKeyEvent(context, mediaServiceClass, event);
-        }
+//        Class<? extends Service> mediaServiceClass = getServiceClass(intent, MediaControlsHelper.RECEIVER_EXTRA_CLASS);
+//        KeyEvent event = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+//
+//        if (mediaServiceClass != null && event != null && event.getAction() == KeyEvent.ACTION_UP) {
+//            handleKeyEvent(context, mediaServiceClass, event);
+//        }
     }
 
     /**

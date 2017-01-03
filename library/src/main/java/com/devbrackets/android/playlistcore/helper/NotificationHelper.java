@@ -272,55 +272,55 @@ public class NotificationHelper {
      *
      * @return The resulting RemoteViews
      */
-    @NonNull
-    protected RemoteViews getCustomNotification(@NonNull Class<? extends Service> serviceClass) {
-        RemoteViews customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
-
-        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
-        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
-        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
-
-        customNotification.setTextViewText(R.id.playlistcore_notification_title, notificationInfo.getTitle());
-        customNotification.setTextViewText(R.id.playlistcore_notification_album, notificationInfo.getAlbum());
-        customNotification.setTextViewText(R.id.playlistcore_notification_artist, notificationInfo.getArtist());
-        if (notificationInfo.getLargeImage() != null) {
-            customNotification.setBitmap(R.id.playlistcore_notification_large_image, "setImageBitmap", notificationInfo.getLargeImage());
-        }
-
-        if (notificationInfo.getMediaState() != null) {
-            updateCustomNotificationMediaState(customNotification);
-        }
-
-        return customNotification;
-    }
+//    @NonNull
+//    protected RemoteViews getCustomNotification(@NonNull Class<? extends Service> serviceClass) {
+//        RemoteViews customNotification = new RemoteViews(context.getPackageName(), R.layout.playlistcore_notification_content);
+//
+//        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
+//        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
+//        customNotification.setOnClickPendingIntent(R.id.playlistcore_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
+//
+//        customNotification.setTextViewText(R.id.playlistcore_notification_title, notificationInfo.getTitle());
+//        customNotification.setTextViewText(R.id.playlistcore_notification_album, notificationInfo.getAlbum());
+//        customNotification.setTextViewText(R.id.playlistcore_notification_artist, notificationInfo.getArtist());
+//        if (notificationInfo.getLargeImage() != null) {
+//            customNotification.setBitmap(R.id.playlistcore_notification_large_image, "setImageBitmap", notificationInfo.getLargeImage());
+//        }
+//
+//        if (notificationInfo.getMediaState() != null) {
+//            updateCustomNotificationMediaState(customNotification);
+//        }
+//
+//        return customNotification;
+//    }
 
     /**
      * Creates the RemoteViews used for the expanded (big) notification
      *
      * @return The resulting RemoteViews
      */
-    @NonNull
-    protected RemoteViews getBigNotification(Class<? extends Service> serviceClass) {
-        RemoteViews bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
-
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_close, createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
-        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
-
-        bigContent.setTextViewText(R.id.playlistcore_big_notification_title, notificationInfo.getTitle());
-        bigContent.setTextViewText(R.id.playlistcore_big_notification_album, notificationInfo.getAlbum());
-        bigContent.setTextViewText(R.id.playlistcore_big_notification_artist, notificationInfo.getArtist());
-        bigContent.setBitmap(R.id.playlistcore_big_notification_large_image, "setImageBitmap", notificationInfo.getLargeImage());
-        bigContent.setBitmap(R.id.playlistcore_big_notification_secondary_image, "setImageBitmap", notificationInfo.getSecondaryImage());
-
-        //Makes sure the play/pause, next, and previous are displayed correctly
-        if (notificationInfo.getMediaState() != null) {
-            updateBigNotificationMediaState(bigContent);
-        }
-
-        return bigContent;
-    }
+//    @NonNull
+//    protected RemoteViews getBigNotification(Class<? extends Service> serviceClass) {
+//        RemoteViews bigContent = new RemoteViews(context.getPackageName(), R.layout.playlistcore_big_notification_content);
+//
+//        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_close, createPendingIntent(RemoteActions.ACTION_STOP, serviceClass));
+//        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_playpause, createPendingIntent(RemoteActions.ACTION_PLAY_PAUSE, serviceClass));
+//        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_next, createPendingIntent(RemoteActions.ACTION_NEXT, serviceClass));
+//        bigContent.setOnClickPendingIntent(R.id.playlistcore_big_notification_prev, createPendingIntent(RemoteActions.ACTION_PREVIOUS, serviceClass));
+//
+//        bigContent.setTextViewText(R.id.playlistcore_big_notification_title, notificationInfo.getTitle());
+//        bigContent.setTextViewText(R.id.playlistcore_big_notification_album, notificationInfo.getAlbum());
+//        bigContent.setTextViewText(R.id.playlistcore_big_notification_artist, notificationInfo.getArtist());
+//        bigContent.setBitmap(R.id.playlistcore_big_notification_large_image, "setImageBitmap", notificationInfo.getLargeImage());
+//        bigContent.setBitmap(R.id.playlistcore_big_notification_secondary_image, "setImageBitmap", notificationInfo.getSecondaryImage());
+//
+//        //Makes sure the play/pause, next, and previous are displayed correctly
+//        if (notificationInfo.getMediaState() != null) {
+//            updateBigNotificationMediaState(bigContent);
+//        }
+//
+//        return bigContent;
+//    }
 
     /**
      * Updates the images for the play/pause button so that only valid ones are

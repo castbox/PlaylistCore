@@ -24,7 +24,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.devbrackets.android.playlistcore.R;
-import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
+//import com.devbrackets.android.playlistcore.helper.MediaControlsHelper;
 import com.devbrackets.android.playlistcore.helper.NotificationHelper;
 import com.devbrackets.android.playlistcore.manager.BasePlaylistManager;
 import com.devbrackets.android.playlistcore.manager.IPlaylistItem;
@@ -42,8 +42,8 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
 
     @Nullable
     protected NotificationHelper notificationHelper;
-    @Nullable
-    protected MediaControlsHelper mediaControlsHelper;
+//    @Nullable
+//    protected MediaControlsHelper mediaControlsHelper;
 
     @Nullable
     protected String currentLargeNotificationUrl;
@@ -169,7 +169,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         super.onDestroy();
 
         notificationHelper = null;
-        mediaControlsHelper = null;
+//        mediaControlsHelper = null;
     }
 
     @Override
@@ -177,7 +177,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         super.onServiceCreate();
 
         notificationHelper = new NotificationHelper(getApplicationContext());
-        mediaControlsHelper = new MediaControlsHelper(getApplicationContext(), getClass());
+//        mediaControlsHelper = new MediaControlsHelper(getApplicationContext(), getClass());
     }
 
     /**
@@ -193,7 +193,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
      * image for the Remote Views Artwork.
      */
     protected void onRemoteViewArtworkUpdated() {
-        updateRemoteViews();
+//        updateRemoteViews();
     }
 
     /**
@@ -231,9 +231,9 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
             notificationHelper.release();
         }
 
-        if (mediaControlsHelper != null) {
-            mediaControlsHelper.release();
-        }
+//        if (mediaControlsHelper != null) {
+//            mediaControlsHelper.release();
+//        }
     }
 
     /**
@@ -243,10 +243,10 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     @Override
     protected void setupAsForeground() {
         //Sets up the Lock Screen playback controls
-        if (mediaControlsHelper != null) {
-            mediaControlsHelper.setMediaControlsEnabled(true);
-            mediaControlsHelper.setBaseInformation(getRemoteViewIconRes());
-        }
+//        if (mediaControlsHelper != null) {
+//            mediaControlsHelper.setMediaControlsEnabled(true);
+//            mediaControlsHelper.setBaseInformation(getRemoteViewIconRes());
+//        }
 
         //Sets up the Notifications
         if (notificationHelper != null) {
@@ -258,7 +258,7 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
         notificationSetup = true;
         setupForeground();
 
-        updateRemoteViews();
+//        updateRemoteViews();
         updateNotification();
     }
 
@@ -304,25 +304,25 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
      * Performs the process to update the playback controls and the background
      * (artwork) image displayed on the lock screen and other remote views.
      */
-    @Override
-    protected void updateRemoteViews() {
-        if (currentPlaylistItem == null || !notificationSetup || mediaControlsHelper == null) {
-            return;
-        }
-
-        //Generate the notification state
-        NotificationHelper.NotificationMediaState mediaState = new NotificationHelper.NotificationMediaState();
-        mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
-        mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
-        mediaState.setPlaying(isPlaying());
-
-
-        //Finish up the update
-        String title = currentPlaylistItem.getTitle();
-        String album = currentPlaylistItem.getAlbum();
-        String artist = currentPlaylistItem.getArtist();
-        mediaControlsHelper.update(title, album, artist, getRemoteViewArtwork(), mediaState);
-    }
+//    @Override
+//    protected void updateRemoteViews() {
+//        if (currentPlaylistItem == null || !notificationSetup || mediaControlsHelper == null) {
+//            return;
+//        }
+//
+//        //Generate the notification state
+//        NotificationHelper.NotificationMediaState mediaState = new NotificationHelper.NotificationMediaState();
+//        mediaState.setNextEnabled(getPlaylistManager().isNextAvailable());
+//        mediaState.setPreviousEnabled(getPlaylistManager().isPreviousAvailable());
+//        mediaState.setPlaying(isPlaying());
+//
+//
+//        //Finish up the update
+//        String title = currentPlaylistItem.getTitle();
+//        String album = currentPlaylistItem.getAlbum();
+//        String artist = currentPlaylistItem.getArtist();
+//        mediaControlsHelper.update(title, album, artist, getRemoteViewArtwork(), mediaState);
+//    }
 
     @Override
     protected void mediaItemChanged() {
