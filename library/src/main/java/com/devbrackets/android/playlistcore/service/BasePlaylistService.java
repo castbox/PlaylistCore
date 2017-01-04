@@ -203,7 +203,10 @@ public abstract class BasePlaylistService<I extends IPlaylistItem, M extends Bas
     protected void setupForeground() {
         if (!foregroundSetup && notificationSetup && notificationHelper != null) {
             foregroundSetup = true;
-            startForeground(getNotificationId(), notificationHelper.getNotification(getNotificationClickPendingIntent(), getClass()));
+            try {
+                startForeground(getNotificationId(), notificationHelper.getNotification(getNotificationClickPendingIntent(), getClass()));
+            } catch (Exception e) {
+            }
         }
     }
 

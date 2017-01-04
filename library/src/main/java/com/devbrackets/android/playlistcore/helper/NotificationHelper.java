@@ -26,13 +26,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.os.RemoteException;
+//import android.os.RemoteException;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
-import android.view.View;
-import android.widget.RemoteViews;
+//import android.view.View;
+//import android.widget.RemoteViews;
 
 import com.devbrackets.android.playlistcore.R;
 import com.devbrackets.android.playlistcore.service.RemoteActions;
@@ -328,16 +328,16 @@ public class NotificationHelper {
      *
      * @param customNotification The RemoteViews to use to modify the state
      */
-    protected void updateCustomNotificationMediaState(@Nullable RemoteViews customNotification) {
-        NotificationMediaState state = notificationInfo.getMediaState();
-        if (customNotification == null || state == null) {
-            return;
-        }
-
-        customNotification.setImageViewResource(R.id.playlistcore_notification_playpause, state.isPlaying() ? R.drawable.playlistcore_notification_pause : R.drawable.playlistcore_notification_play);
-        customNotification.setInt(R.id.playlistcore_notification_prev, "setVisibility", state.isPreviousEnabled() ? View.VISIBLE : View.GONE);
-        customNotification.setInt(R.id.playlistcore_notification_next, "setVisibility", state.isNextEnabled() ? View.VISIBLE : View.GONE);
-    }
+//    protected void updateCustomNotificationMediaState(@Nullable RemoteViews customNotification) {
+//        NotificationMediaState state = notificationInfo.getMediaState();
+//        if (customNotification == null || state == null) {
+//            return;
+//        }
+//
+//        customNotification.setImageViewResource(R.id.playlistcore_notification_playpause, state.isPlaying() ? R.drawable.playlistcore_notification_pause : R.drawable.playlistcore_notification_play);
+//        customNotification.setInt(R.id.playlistcore_notification_prev, "setVisibility", state.isPreviousEnabled() ? View.VISIBLE : View.GONE);
+//        customNotification.setInt(R.id.playlistcore_notification_next, "setVisibility", state.isNextEnabled() ? View.VISIBLE : View.GONE);
+//    }
 
     /**
      * Updates the images for the play/pause, next, and previous buttons so that only valid ones are
@@ -345,16 +345,16 @@ public class NotificationHelper {
      *
      * @param bigContent The RemoteViews to use to modify the state
      */
-    protected void updateBigNotificationMediaState(@Nullable RemoteViews bigContent) {
-        NotificationMediaState state = notificationInfo.getMediaState();
-        if (bigContent == null || state == null) {
-            return;
-        }
-
-        bigContent.setImageViewResource(R.id.playlistcore_big_notification_playpause, state.isPlaying() ? R.drawable.playlistcore_notification_pause : R.drawable.playlistcore_notification_play);
-        bigContent.setInt(R.id.playlistcore_big_notification_prev, "setVisibility", state.isPreviousEnabled() ? View.VISIBLE : View.INVISIBLE);
-        bigContent.setInt(R.id.playlistcore_big_notification_next, "setVisibility", state.isNextEnabled() ? View.VISIBLE : View.INVISIBLE);
-    }
+//    protected void updateBigNotificationMediaState(@Nullable RemoteViews bigContent) {
+//        NotificationMediaState state = notificationInfo.getMediaState();
+//        if (bigContent == null || state == null) {
+//            return;
+//        }
+//
+//        bigContent.setImageViewResource(R.id.playlistcore_big_notification_playpause, state.isPlaying() ? R.drawable.playlistcore_notification_pause : R.drawable.playlistcore_notification_play);
+//        bigContent.setInt(R.id.playlistcore_big_notification_prev, "setVisibility", state.isPreviousEnabled() ? View.VISIBLE : View.INVISIBLE);
+//        bigContent.setInt(R.id.playlistcore_big_notification_next, "setVisibility", state.isNextEnabled() ? View.VISIBLE : View.INVISIBLE);
+//    }
 
     /**
      * Creates a PendingIntent for the given action to the specified service
